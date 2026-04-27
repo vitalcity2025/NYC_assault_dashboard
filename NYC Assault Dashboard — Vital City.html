@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<!-- saved from url=(0057)file:///C:/Users/paulr/Downloads/assault_dashboard_1.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NYC Assault Dashboard — Vital City</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black:#050507; --white:#ffffff; --orange:#ff7c53; --yellow:#dde44c;
+  --indigo:#394882; --cerulean:#217ebe; --magenta:#e7466d; --charcoal:#707175;
+  --peri:#9b9fbc; --text:#050507; --text2:#707175; --text3:#9b9fbc;
+  --border:rgba(5,5,7,0.1); --border2:rgba(5,5,7,0.18); --grid:rgba(5,5,7,0.06);
+  --font-primary:"halyard-text","Inter","Helvetica Neue",Arial,sans-serif;
+  --font-display:"halyard-display","halyard-text","Inter",Arial,sans-serif;
+}
+html,body{background:var(--white);}
+body{font-family:var(--font-primary);font-weight:300;color:var(--text);
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+.masthead{background:var(--black);padding:1.75rem 2.5rem;display:flex;
+  justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1.5rem;}
+.mast-vc{font-weight:700;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--orange);margin-bottom:10px;}
+.mast-title{font-family:"gascogne","Georgia",serif;font-weight:200;font-size:44px;
+  color:var(--white);line-height:1.1;letter-spacing:-0.01em;}
+.mast-sub{font-weight:200;font-size:13px;color:#c8c8c8;margin-top:10px;}
+.mast-badge{font-weight:700;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
+  color:#c8c8c8;border:1px solid rgba(255,255,255,0.18);padding:7px 12px;
+  white-space:nowrap;align-self:flex-start;margin-top:4px;}
+.yellow-rule{height:4px;background:var(--yellow);}
+.page{max-width:1200px;margin:0 auto;padding:2rem 2rem 5rem;}
+.controls-block{padding:1.25rem 0 1.5rem;border-bottom:1px solid var(--border);margin-bottom:1.5rem;}
+.ctrl-row{display:flex;flex-wrap:wrap;gap:1.5rem;align-items:flex-end;margin-bottom:1rem;}
+.ctrl-row:last-child{margin-bottom:0;}
+.ctrl{display:flex;flex-direction:column;gap:5px;}
+.ctrl label{font-weight:700;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--charcoal);}
+.ctrl.disabled label{color:var(--text3);}
+.ctrl.disabled select,.ctrl.disabled .toggle-group{opacity:0.38;pointer-events:none;}
+select{font-family:var(--font-primary);font-weight:300;font-size:14px;height:36px;
+  border:1px solid var(--border2);background:var(--white);color:var(--text);
+  padding:0 32px 0 10px;cursor:pointer;border-radius:0;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23050507'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;transition:border-color 0.1s;}
+select:hover{border-color:var(--black);}
+select:focus{outline:2px solid var(--orange);outline-offset:0;border-color:var(--black);}
+.toggle-group{display:flex;height:36px;border:1.5px solid var(--black);}
+.toggle-group button{flex:1;border:none;border-right:1px solid var(--border);
+  background:var(--white);color:var(--text2);font-family:var(--font-primary);
+  font-weight:700;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;
+  padding:0 14px;cursor:pointer;white-space:nowrap;}
+.toggle-group button:last-child{border-right:none;}
+.toggle-group button.active{background:var(--black);color:var(--white);}
+.toggle-group button:hover:not(.active){background:var(--yellow);color:var(--black);}
+.filter-panel-toggle{display:inline-flex;align-items:center;gap:6px;font-weight:700;
+  font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--charcoal);
+  cursor:pointer;user-select:none;margin-top:0.75rem;}
+.filter-panel-toggle:hover{color:var(--black);}
+.filter-arrow{font-size:10px;transition:transform 0.2s;display:inline-block;}
+.filter-arrow.open{transform:rotate(90deg);}
+.filter-panel{margin-top:1rem;padding:1.25rem;background:#fafafa;
+  border:1px solid var(--border);display:none;}
+.filter-panel.open{display:block;}
+.filter-note{font-size:11px;color:var(--text3);margin-bottom:1rem;padding:8px 10px;
+  background:#fff3f0;border-left:3px solid var(--orange);}
+.active-filters{display:flex;flex-wrap:wrap;gap:6px;margin-top:0.75rem;}
+.filter-chip{display:inline-flex;align-items:center;gap:5px;background:var(--black);
+  color:var(--white);font-size:10px;font-weight:700;letter-spacing:0.06em;
+  text-transform:uppercase;padding:4px 8px;cursor:pointer;}
+.filter-chip:hover{background:var(--magenta);}
+.filter-chip .chip-x{font-size:12px;line-height:1;}
+.metrics{display:grid;grid-template-columns:1.4fr repeat(3,minmax(0,1fr));
+  border-bottom:1px solid var(--border);margin-bottom:2.5rem;}
+.metric{padding:1.25rem 1.25rem 1rem;border-right:1px solid var(--border);}
+.metric:last-child{border-right:none;}
+.metric.primary-metric{background:#fafafa;border-left:4px solid var(--yellow);
+  padding-left:calc(1.25rem - 4px);}
+.m-label{font-weight:700;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--text2);margin-bottom:10px;}
+.m-val{font-family:var(--font-display);font-weight:500;font-size:32px;
+  line-height:1;letter-spacing:-0.02em;}
+.primary-metric .m-val{font-size:44px;font-weight:700;}
+.m-delta{font-weight:700;font-size:11px;letter-spacing:0.04em;margin-top:8px;}
+.delta-up{color:var(--magenta);} .delta-down{color:#3a7a1e;} .delta-flat{color:var(--text3);}
+.chart-section{margin-bottom:3rem;}
+.chart-title{font-family:var(--font-display);font-weight:700;font-size:15px;
+  color:var(--text);margin-bottom:4px;}
+.chart-sub{font-weight:200;font-size:12px;color:var(--text2);margin-bottom:1rem;}
+.chart-rule{height:1.5px;background:var(--orange);margin:0 0 14px;}
+.two-col{display:grid;grid-template-columns:3fr 2fr;gap:3rem;margin-bottom:3rem;}
+.legend{display:flex;gap:1.25rem;flex-wrap:wrap;margin-bottom:1rem;}
+.legend span{display:flex;align-items:center;gap:6px;font-weight:700;font-size:10px;
+  letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.boro-list{display:flex;flex-direction:column;gap:14px;}
+.boro-bar-bg{height:10px;background:#f0f0f0;}
+.boro-bar-fill{height:100%;transition:width 0.4s;}
+.tooltip{position:absolute;pointer-events:none;background:#050507;color:#fff !important;
+  font-size:12px;font-weight:500;line-height:1.6;padding:8px 12px;white-space:nowrap;
+  opacity:0;transition:opacity 0.1s;z-index:10;border-left:3px solid var(--orange);}
+.tooltip.visible{opacity:1;} .tooltip *{color:#fff !important;}
+#map-container{position:relative;width:100%;height:420px;background:#f8f8f6;overflow:hidden;}
+#map-canvas{display:block;cursor:default;}
+#map-loading{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;font-size:13px;color:var(--text3);}
+#map-tooltip{position:absolute;pointer-events:none;background:#050507;color:#fff;
+  font-size:12px;font-weight:500;line-height:1.6;padding:8px 12px;white-space:nowrap;
+  opacity:0;transition:opacity 0.1s;z-index:10;border-left:3px solid var(--orange);}
+#map-tooltip.visible{opacity:1;}
+.state-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:60vh;gap:1rem;color:var(--text2);text-align:center;}
+.state-screen h2{font-size:18px;font-weight:700;color:var(--text);}
+.state-screen code{background:#f5f5f5;border:1px solid var(--border);
+  padding:2px 7px;font-family:monospace;font-size:12px;}
+.methodology{margin-top:3rem;padding-top:1.5rem;border-top:1.5px solid var(--orange);}
+.meth-title{font-weight:700;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--orange);margin-bottom:1rem;}
+.meth-body{columns:2;column-gap:3rem;}
+.meth-body p{font-weight:300;font-size:12px;line-height:1.65;color:var(--text2);
+  margin:0 0 0.75rem;break-inside:avoid;}
+.meth-body strong{font-weight:700;color:var(--text);}
+.source{font-weight:300;font-size:11px;color:var(--text2);padding-top:1.25rem;
+  border-top:1px solid var(--border);margin-top:2rem;line-height:1.6;}
+.source strong{font-weight:700;color:var(--text);}
+@media(max-width:800px){
+  .metrics{grid-template-columns:repeat(2,1fr);}
+  .two-col{grid-template-columns:1fr;gap:2rem;}
+  .masthead{padding:1.25rem;} .page{padding:1.5rem 1.25rem 4rem;}
+  #map-container{height:280px;}
+}
+</style>
+</head>
+<body>
+<div class="masthead">
+  <div>
+    <div class="mast-vc">Vital City</div>
+    <div class="mast-title">NYC assault dashboard</div>
+    <div class="mast-sub">Felony and misdemeanor assault complaints and arrests — 2006 to present.</div>
+    <div class="mast-badge" id="meta-badge">Loading…</div>
+  </div>
+</div>
+<div class="yellow-rule"></div>
+<div class="page" id="app"><div class="state-screen">
+      <h2>Data file not found</h2>
+      <p>Place <code>assault_data.json</code> in the same folder as this file, then reload.<br><br>
+      Generate it with: <code>source("fetch_assault_data.R")</code></p></div></div>
+
+<script>
+// =============================================================================
+// COLUMNAR DATA FORMAT
+// =============================================================================
+// Each table arrives as { cols: ["year","ofns_desc",...], rows: [[2023,"FELONY ASSAULT",...], ...] }
+// fromColumnar() converts this to an array of plain objects for filtering.
+// Called once on boot — after that everything works with normal row objects.
+
+function fromColumnar(tbl) {
+  if (!tbl || !tbl.cols || !tbl.rows) return [];
+  const cols = tbl.cols;
+  return tbl.rows.map(row => {
+    const obj = {};
+    cols.forEach((c, i) => { obj[c] = row[i]; });
+    return obj;
+  });
+}
+
+// =============================================================================
+// DATA
+// =============================================================================
+let DATA      = null;
+let FILTERS   = null;
+let C_MONTHLY = null;
+let A_MONTHLY = null;
+let C_SUSP    = null;
+let C_VIC     = null;
+let C_IO_SUSP = null;
+let C_IO_VIC  = null;
+let A_YR      = null;
+let PCT_MAP   = null;
+let GEO       = null;
+
+// =============================================================================
+// STATE
+// =============================================================================
+const state = {
+  dataSource:"complaints", offense:"All assaults", locType:"all",
+  borough:"all", viewMode:"yearly",
+  pdDesc:"all", locDetail:"venue", premGroup:"all", insideOut:"all",
+  timeOfDay:"all", suspAge:"all", suspRace:"all", suspSex:"all",
+  vicAge:"all", vicRace:"all", vicSex:"all",
+};
+
+// =============================================================================
+// COLORS
+// =============================================================================
+const C_CUR="#ff7c53", C_CMP="#c8c8c8", C_TREND="#ff7c53";
+const C_GRID="rgba(5,5,7,0.06)", C_AXIS="rgba(5,5,7,0.15)", C_LABEL="#707175";
+const BORO_COLORS={"Bronx":"#ff7c53","Brooklyn":"#217ebe","Manhattan":"#e7466d",
+  "Queens":"#b8c400","Staten Island":"#9b9fbc"};
+const PALETTE=["#394882","#ff7c53","#217ebe","#e7466d","#dde44c","#9b9fbc","#2d8a3e","#c8c8c8"];
+
+// =============================================================================
+// PRECINCT DATA
+// =============================================================================
+const PRECINCT_NAMES={
+  1:"Financial District",5:"Chinatown/Lower East Side",6:"West Village",
+  7:"Lower East Side",9:"East Village",10:"Chelsea/Hell's Kitchen",
+  13:"Gramercy/Flatiron",14:"Midtown South",17:"Midtown East",18:"Midtown North",
+  19:"Upper East Side",20:"Upper West Side",22:"Central Park",23:"East Harlem",
+  24:"Upper West Side/Manhattan Valley",25:"East Harlem",26:"Morningside Heights",
+  28:"Harlem",30:"West Harlem",32:"Harlem",33:"Washington Heights",34:"Washington Heights",
+  40:"Mott Haven",41:"Longwood",42:"Morrisania",43:"Hunts Point",44:"Melrose",
+  45:"Tremont",46:"East Tremont",47:"Fordham",48:"Belmont/Fordham",49:"Pelham Parkway",
+  50:"Riverdale",52:"Kingsbridge",53:"Wakefield",61:"Seagate/Coney Island",
+  62:"Brighton Beach",63:"Bay Ridge",66:"Bensonhurst",67:"Crown Heights",
+  68:"Bay Ridge/Dyker Heights",69:"Canarsie",70:"Flatbush",71:"Crown Heights",
+  72:"Sunset Park",73:"Brownsville",75:"East New York",76:"Carroll Gardens/Red Hook",
+  77:"Crown Heights",78:"Park Slope",79:"Bushwick",81:"Bedford-Stuyvesant",
+  83:"Bushwick",84:"Brooklyn Heights/DUMBO",88:"Boerum Hill",
+  90:"Greenpoint/Williamsburg",94:"Sea Gate/Coney Island",
+  100:"Howard Beach/Ozone Park",101:"Far Rockaway",102:"Richmond Hill",
+  103:"Jackson Heights/Corona",104:"Middle Village/Ridgewood",105:"Queens Village",
+  106:"Ozone Park/Howard Beach",107:"Fresh Meadows",108:"Sunnyside/Woodside",
+  109:"Flushing",110:"Corona/Elmhurst",111:"Bayside",112:"Forest Hills/Kew Gardens",
+  113:"St. Albans/Jamaica",114:"Astoria/Long Island City",115:"Jackson Heights/Elmhurst",
+  120:"St. George/New Brighton",121:"New Springville/Grasmere",
+  122:"South Beach/Tottenville",123:"Tottenville/Great Kills"
+};
+const PCT_BOROUGH={};
+[1,5,6,7,9,10,13,14,17,18,19,20,22,23,24,25,26,28,30,32,33,34].forEach(p=>PCT_BOROUGH[p]="Manhattan");
+[40,41,42,43,44,45,46,47,48,49,50,52,53].forEach(p=>PCT_BOROUGH[p]="Bronx");
+[61,62,63,66,67,68,69,70,71,72,73,75,76,77,78,79,81,83,84,88,90,94].forEach(p=>PCT_BOROUGH[p]="Brooklyn");
+[100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115].forEach(p=>PCT_BOROUGH[p]="Queens");
+[120,121,122,123].forEach(p=>PCT_BOROUGH[p]="Staten Island");
+function pctLabel(n){const nm=PRECINCT_NAMES[n];return nm?`Pct. ${n} — ${nm}`:`Precinct ${n}`;}
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+function fmt(n){if(n==null||isNaN(n))return"—";return Math.round(n).toLocaleString();}
+function fmtK(v){return v>=1000?(v/1000).toFixed(0)+"k":String(Math.round(v));}
+function sumN(rows){return rows.reduce((s,r)=>s+(r.n||0),0);}
+function getYTDMonth(){return DATA.meta.current_quarter==="Q1"?3:
+  DATA.meta.current_quarter==="Q2"?6:DATA.meta.current_quarter==="Q3"?9:12;}
+function deltaDisplay(curr,prev){
+  if(!prev||prev===0)return{text:"No prior data",cls:"delta-flat"};
+  const pct=((curr-prev)/prev)*100,sign=pct>0?"+":"",arrow=pct>0?"▲":pct<0?"▼":"▬";
+  return{text:`${arrow} ${sign}${pct.toFixed(1)}% vs prior year`,
+    cls:pct>0?"delta-up":pct<0?"delta-down":"delta-flat"};}
+
+// =============================================================================
+// TABLE SELECTION
+// =============================================================================
+function getDemoMode(){
+  const hasSusp=state.suspAge!=="all"||state.suspRace!=="all"||state.suspSex!=="all";
+  const hasVic=state.vicAge!=="all"||state.vicRace!=="all"||state.vicSex!=="all";
+  if(hasSusp&&hasVic)return"susp";
+  if(hasVic)return"vic";
+  return"susp";
+}
+function getYearlyTable(){
+  if(state.dataSource==="arrests")return A_YR;
+  const mode=getDemoMode();
+  if(state.locDetail==="inside_outside")return mode==="vic"?C_IO_VIC:C_IO_SUSP;
+  return mode==="vic"?C_VIC:C_SUSP;
+}
+function filterYearly(rows){
+  const isArr=state.dataSource==="arrests",mode=getDemoMode();
+  return rows.filter(r=>{
+    if(state.offense!=="All assaults"&&r.ofns_desc!==state.offense)return false;
+    if(state.locType!=="all"&&r.loc_type!==state.locType)return false;
+    if(state.borough!=="all"&&r.borough!==state.borough)return false;
+    if(state.pdDesc!=="all"&&r.pd_desc!==state.pdDesc)return false;
+    if(!isArr){
+      if(state.locDetail==="venue"){
+        if(state.premGroup!=="all"&&r.prem_group!==state.premGroup)return false;
+        if(state.timeOfDay!=="all"&&r.time_of_day!==state.timeOfDay)return false;
+      } else {
+        if(state.insideOut!=="all"&&r.inside_outside!==state.insideOut)return false;
+      }
+      if(mode==="susp"){
+        if(state.suspAge!=="all"&&r.susp_age!==state.suspAge)return false;
+        if(state.suspRace!=="all"&&r.susp_race!==state.suspRace)return false;
+        if(state.suspSex!=="all"&&r.susp_sex!==state.suspSex)return false;
+      } else {
+        if(state.vicAge!=="all"&&r.vic_age!==state.vicAge)return false;
+        if(state.vicRace!=="all"&&r.vic_race!==state.vicRace)return false;
+        if(state.vicSex!=="all"&&r.vic_sex!==state.vicSex)return false;
+      }
+    } else {
+      if(state.suspAge!=="all"&&r.age_group!==state.suspAge)return false;
+      if(state.suspRace!=="all"&&r.perp_race!==state.suspRace)return false;
+      if(state.suspSex!=="all"&&r.perp_sex!==state.suspSex)return false;
+    }
+    return true;
+  });
+}
+function filterMonthly(rows){
+  return rows.filter(r=>{
+    if(state.offense!=="All assaults"&&r.ofns_desc!==state.offense)return false;
+    if(state.locType!=="all"&&r.loc_type!==state.locType)return false;
+    if(state.borough!=="all"&&r.borough!==state.borough)return false;
+    return true;
+  });
+}
+
+// =============================================================================
+// TIME SERIES
+// =============================================================================
+function buildMonthlySeries(rows){
+  const map={};
+  rows.forEach(r=>{const k=`${r.year}-${String(r.month).padStart(2,"0")}`;map[k]=(map[k]||0)+r.n;});
+  return Object.entries(map).map(([k,n])=>{const[y,m]=k.split("-");return{year:parseInt(y),month:parseInt(m),n};})
+    .sort((a,b)=>a.year!==b.year?a.year-b.year:a.month-b.month);
+}
+function buildYearlySeries(rows,ytdOnly=false){
+  const ytdM=getYTDMonth(),map={};
+  rows.forEach(r=>{if(ytdOnly&&r.month>ytdM)return;map[r.year]=(map[r.year]||0)+r.n;});
+  return Object.entries(map).map(([y,n])=>({year:parseInt(y),n})).sort((a,b)=>a.year-b.year);
+}
+function buildRollingSeries(monthly,w=12){
+  return monthly.map((pt,i)=>{
+    if(i<w-1)return{...pt,n:null};
+    return{...pt,n:monthly.slice(i-w+1,i+1).reduce((s,p)=>s+p.n,0)/w};
+  });
+}
+function buildYearlyBreakdown(rows,dimFn){
+  const groups={};
+  rows.forEach(r=>{const d=dimFn(r)||"Unknown";if(!groups[d])groups[d]={};groups[d][r.year]=(groups[d][r.year]||0)+r.n;});
+  const allYears=[...new Set(rows.map(r=>r.year))].sort((a,b)=>a-b);
+  return{allYears,groups:Object.entries(groups).map(([label,byYear],idx)=>({
+    label,color:PALETTE[idx%PALETTE.length],
+    data:allYears.map(y=>byYear[y]||0),
+    total:Object.values(byYear).reduce((s,v)=>s+v,0)
+  })).sort((a,b)=>b.total-a.total).slice(0,8)};
+}
+
+// =============================================================================
+// BUILD APP
+// =============================================================================
+function buildApp(){
+  const f=FILTERS,curYear=DATA.meta.current_year;
+  const allPdDesc=[...new Set([...f.pd_desc.felony,...f.pd_desc.misd])].sort();
+  document.getElementById("meta-badge").textContent=
+    `Data through ${DATA.meta.ytd_through} · updated ${new Date(DATA.meta.generated)
+    .toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`;
+  document.getElementById("app").innerHTML=`
+    <div class="controls-block">
+      <div class="ctrl-row">
+        <div class="ctrl"><label>Data source</label>
+          <div class="toggle-group" id="tg-source">
+            <button data-val="complaints" class="active">Complaints</button>
+            <button data-val="arrests">Arrests</button>
+          </div></div>
+        <div class="ctrl"><label>Offense type</label>
+          <div class="toggle-group" id="tg-offense">
+            <button data-val="All assaults" class="active">All</button>
+            <button data-val="FELONY ASSAULT">Felony</button>
+            <button data-val="ASSAULT 3 & RELATED OFFENSES">Misdemeanor</button>
+          </div></div>
+        <div class="ctrl"><label>Location</label>
+          <div class="toggle-group" id="tg-loc">
+            <button data-val="all" class="active">All</button>
+            <button data-val="Patrol">Patrol</button>
+            <button data-val="Subway">Subway</button>
+            <button data-val="Housing">Housing</button>
+          </div></div>
+        <div class="ctrl"><label>Borough</label>
+          <select id="sel-boro">
+            <option value="all">All boroughs</option>
+            ${f.boroughs.map(b=>`<option value="${b}">${b}</option>`).join("")}
+          </select></div>
+        <div class="ctrl"><label>Trend view</label>
+          <div class="toggle-group" id="tg-view">
+            <button data-val="yearly" class="active">Yearly</button>
+            <button data-val="ytd">YTD</button>
+            <button data-val="monthly">Monthly</button>
+            <button data-val="rolling12">12-mo avg</button>
+          </div></div>
+      </div>
+      <div class="active-filters" id="active-filters"></div>
+      <div class="filter-panel-toggle" id="filter-toggle">
+        <span class="filter-arrow" id="filter-arrow">▶</span>
+        Advanced filters
+        <span id="filter-count" style="color:var(--orange);margin-left:2px;"></span>
+      </div>
+      <div class="filter-panel" id="filter-panel">
+        <div id="demo-note" class="filter-note" style="display:none;">
+          <strong>Note:</strong> Suspect and victim demographics cannot be filtered simultaneously.
+          When both are set, suspect filters take priority.
+        </div>
+        <div id="arrests-note" class="filter-note" style="display:none;">
+          <strong>Note:</strong> Venue, inside/outside, time of day, and victim demographics
+          are not available for arrests data.
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl"><label>Charge type (PD_DESC)</label>
+            <select id="sel-pd-desc" style="min-width:260px;">
+              <option value="all">All charge types</option>
+              ${allPdDesc.map(v=>`<option value="${v}">${v.charAt(0)+v.slice(1).toLowerCase()}</option>`).join("")}
+            </select></div>
+          <div class="ctrl" id="ctrl-loc-detail"><label>Location detail</label>
+            <div class="toggle-group" id="tg-loc-detail">
+              <button data-val="venue" class="active">Venue type</button>
+              <button data-val="inside_outside">Inside / Outside</button>
+            </div></div>
+        </div>
+        <div class="ctrl-row" id="venue-row">
+          <div class="ctrl"><label>Venue / Premise type</label>
+            <select id="sel-prem" style="min-width:200px;">
+              <option value="all">All venues</option>
+              ${f.prem_groups.map(v=>`<option value="${v}">${v}</option>`).join("")}
+            </select></div>
+          <div class="ctrl" id="ctrl-time"><label>Time of day</label>
+            <select id="sel-time" style="min-width:220px;">
+              <option value="all">All times</option>
+              ${f.time_of_day.map(v=>`<option value="${v}">${v}</option>`).join("")}
+            </select></div>
+        </div>
+        <div class="ctrl-row" id="io-row" style="display:none;">
+          <div class="ctrl"><label>Inside / Outside</label>
+            <div class="toggle-group" id="tg-io">
+              <button data-val="all" class="active">All</button>
+              <button data-val="Inside">Inside</button>
+              <button data-val="Outside">Outside</button>
+            </div></div>
+        </div>
+        <div class="ctrl-row" id="susp-row">
+          <div class="ctrl"><label>Suspect age</label>
+            <select id="sel-susp-age">
+              <option value="all">All ages</option>
+              ${f.age_groups.map(v=>`<option value="${v}">${v}</option>`).join("")}
+            </select></div>
+          <div class="ctrl"><label>Suspect race</label>
+            <select id="sel-susp-race" style="min-width:200px;">
+              <option value="all">All races</option>
+              ${f.susp_races.map(v=>`<option value="${v}">${v.charAt(0)+v.slice(1).toLowerCase()}</option>`).join("")}
+            </select></div>
+          <div class="ctrl"><label>Suspect sex</label>
+            <select id="sel-susp-sex">
+              <option value="all">All</option><option value="M">Male</option>
+              <option value="F">Female</option><option value="Unknown">Unknown</option>
+            </select></div>
+        </div>
+        <div class="ctrl-row" id="vic-row">
+          <div class="ctrl"><label>Victim age</label>
+            <select id="sel-vic-age">
+              <option value="all">All ages</option>
+              ${f.age_groups.map(v=>`<option value="${v}">${v}</option>`).join("")}
+            </select></div>
+          <div class="ctrl"><label>Victim race</label>
+            <select id="sel-vic-race" style="min-width:200px;">
+              <option value="all">All races</option>
+              ${f.vic_races.map(v=>`<option value="${v}">${v.charAt(0)+v.slice(1).toLowerCase()}</option>`).join("")}
+            </select></div>
+          <div class="ctrl"><label>Victim sex</label>
+            <select id="sel-vic-sex">
+              <option value="all">All</option><option value="M">Male</option>
+              <option value="F">Female</option><option value="Unknown">Unknown</option>
+            </select></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics" id="metrics-row"></div>
+
+    <div class="chart-section">
+      <div class="chart-rule"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+        <div class="chart-title">Assaults over time</div>
+        <div id="trend-note" style="font-size:11px;color:var(--text3);margin-top:2px;"></div>
+      </div>
+      <div class="chart-sub" id="trend-sub"></div>
+      <div class="legend" id="trend-legend"></div>
+      <div style="position:relative;">
+        <canvas id="chart-trend" style="width:100%;height:240px;display:block;"></canvas>
+        <div id="tt-trend" class="tooltip"></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-section">
+        <div class="chart-rule"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+          <div class="chart-title">Break down by</div>
+          <select id="sel-breakdown" style="font-size:12px;height:28px;padding:0 26px 0 8px;">
+            <option value="none">— select —</option>
+            <optgroup label="Offense">
+              <option value="ofns_desc">Felony vs misdemeanor</option>
+              <option value="pd_desc">Charge type</option>
+            </optgroup>
+            <optgroup label="Location">
+              <option value="loc_type">Location type</option>
+              <option value="borough">Borough</option>
+              <option value="prem_group">Venue type</option>
+              <option value="inside_outside">Inside / Outside</option>
+              <option value="time_of_day">Time of day</option>
+            </optgroup>
+            <optgroup label="Suspect / Perpetrator">
+              <option value="susp_age">Suspect age</option>
+              <option value="susp_race">Suspect race</option>
+              <option value="susp_sex">Suspect sex</option>
+            </optgroup>
+            <optgroup label="Victim (complaints only)">
+              <option value="vic_age">Victim age</option>
+              <option value="vic_race">Victim race</option>
+              <option value="vic_sex">Victim sex</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="chart-sub" id="breakdown-sub">Select a dimension above to break down the trend.</div>
+        <div class="legend" id="breakdown-legend"></div>
+        <div style="position:relative;">
+          <canvas id="chart-breakdown" style="width:100%;height:240px;display:block;"></canvas>
+          <div id="tt-breakdown" class="tooltip"></div>
+        </div>
+      </div>
+      <div class="chart-section">
+        <div class="chart-rule"></div>
+        <div class="chart-title">By borough</div>
+        <div class="chart-sub" id="boro-sub"></div>
+        <div class="legend" id="boro-legend"></div>
+        <div class="boro-list" id="boro-list"></div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-rule"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+        <div>
+          <div class="chart-title">By precinct — year over year change</div>
+          <div class="chart-sub" id="map-sub"></div>
+        </div>
+        <div id="map-scale" style="display:flex;align-items:center;font-size:11px;color:var(--text3);"></div>
+      </div>
+      <div id="map-container">
+        <canvas id="map-canvas"></canvas>
+        <div id="map-loading">Loading map…</div>
+        <div id="map-tooltip"></div>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text3);">
+        Map shows year-over-year % change by precinct. Green = decrease · Red = increase · Gray = no data.
+        Reflects offense type and location filters only.
+      </div>
+    </div>
+
+    <div class="methodology">
+      <div class="meth-title">Methodology &amp; notes</div>
+      <div class="meth-body">
+        <p><strong>Complaints data</strong> from NYPD Complaint Data Historic and Year-to-Date datasets on NYC Open Data. Each record is a reported incident, including cases where no arrest was made.</p>
+        <p><strong>Arrests data</strong> from NYPD Arrests Data Historic and Year-to-Date. Arrests data does not include premise type, inside/outside location, time of day, or victim demographics.</p>
+        <p><strong>Demographic filters</strong> — Suspect and victim demographics are stored in separate tables and cannot be filtered simultaneously. When both are set, suspect filters take priority.</p>
+        <p><strong>Trend chart</strong> uses a simplified monthly table (offense/location/borough only) to support rolling averages. The yearly breakdown uses the full filter tables, so totals may differ slightly when demographic filters are active.</p>
+        <p><strong>Charge type (PD_DESC)</strong> — Grouped into seven categories: <em>Assault 2,1 unclassified</em>, <em>Strangulation 1st</em>, <em>Assault on police/peace officer</em>, <em>Assault on other public servant</em> (felony); <em>Assault 3</em>, <em>Obstruction of breathing</em>, <em>Menacing</em> (misdemeanor).</p>
+        <p><strong>Premise groups</strong> — 12 categories. K-12 Schools includes public and private/parochial schools. Homeless Shelter added as distinct NYPD category in 2018.</p>
+        <p><strong>Demographics</strong> — Victim sex codes E, L, D recoded as Unknown. "Other" race recoded as Unknown. Unknown retained as a distinct visible category.</p>
+        <p><strong>Rolling 12-month average</strong> — Trailing 12-month average. First 11 months not shown.</p>
+      </div>
+    </div>
+    <div class="source">
+      <strong>Sources:</strong> NYPD Complaint Data Historic; NYPD Complaint Data Current (Year to Date); NYPD Arrests Data (Historic); NYPD Arrest Data (Year to Date) — NYC Open Data.
+      Population: NYC Dept. of City Planning / US Census Bureau. Precinct boundaries: ResidentMario/geoplot-data. Analysis by Vital City.
+    </div>
+  `;
+  wireEvents(); updateUI(); render();
+}
+
+// =============================================================================
+// EVENTS
+// =============================================================================
+function wireEvents(){
+  function onToggle(id,key,cb){
+    document.getElementById(id).addEventListener("click",e=>{
+      const btn=e.target.closest("button");if(!btn)return;
+      document.querySelectorAll(`#${id} button`).forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");state[key]=btn.dataset.val;
+      if(cb)cb();updateUI();render();});
+  }
+  function onSelect(id,key){
+    document.getElementById(id).addEventListener("change",e=>{state[key]=e.target.value;updateUI();render();});}
+  onToggle("tg-source","dataSource");onToggle("tg-offense","offense");
+  onToggle("tg-loc","locType");onToggle("tg-view","viewMode");onToggle("tg-io","insideOut");
+  onToggle("tg-loc-detail","locDetail",()=>{
+    document.getElementById("venue-row").style.display=state.locDetail==="venue"?"":"none";
+    document.getElementById("io-row").style.display=state.locDetail==="inside_outside"?"":"none";});
+  onSelect("sel-boro","borough");onSelect("sel-pd-desc","pdDesc");
+  onSelect("sel-prem","premGroup");onSelect("sel-time","timeOfDay");
+  onSelect("sel-susp-age","suspAge");onSelect("sel-susp-race","suspRace");onSelect("sel-susp-sex","suspSex");
+  onSelect("sel-vic-age","vicAge");onSelect("sel-vic-race","vicRace");onSelect("sel-vic-sex","vicSex");
+  document.getElementById("sel-breakdown").addEventListener("change",e=>renderBreakdown(e.target.value));
+  document.getElementById("filter-toggle").addEventListener("click",()=>{
+    const p=document.getElementById("filter-panel"),a=document.getElementById("filter-arrow");
+    p.classList.toggle("open");a.classList.toggle("open",p.classList.contains("open"));});
+  document.getElementById("active-filters").addEventListener("click",e=>{
+    const chip=e.target.closest(".filter-chip");if(!chip)return;
+    state[chip.dataset.key]="all";
+    const selMap={pdDesc:"sel-pd-desc",premGroup:"sel-prem",timeOfDay:"sel-time",
+      suspAge:"sel-susp-age",suspRace:"sel-susp-race",suspSex:"sel-susp-sex",
+      vicAge:"sel-vic-age",vicRace:"sel-vic-race",vicSex:"sel-vic-sex"};
+    const el=document.getElementById(selMap[chip.dataset.key]);if(el)el.value="all";
+    updateUI();render();});
+}
+
+// =============================================================================
+// UPDATE UI
+// =============================================================================
+function updateUI(){
+  const isArr=state.dataSource==="arrests";
+  const hasSusp=state.suspAge!=="all"||state.suspRace!=="all"||state.suspSex!=="all";
+  const hasVic=state.vicAge!=="all"||state.vicRace!=="all"||state.vicSex!=="all";
+  ["ctrl-loc-detail","ctrl-time","vic-row"].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.classList.toggle("disabled",isArr);});
+  const dn=document.getElementById("demo-note"),an=document.getElementById("arrests-note");
+  if(dn)dn.style.display=(hasSusp&&hasVic&&!isArr)?"":"none";
+  if(an)an.style.display=isArr?"":"none";
+  const tn=document.getElementById("trend-note");
+  if(tn)tn.textContent=(hasSusp||hasVic)&&(state.viewMode==="monthly"||state.viewMode==="rolling12")
+    ?"Trend line uses offense/location filters only":"";
+  const pdSel=document.getElementById("sel-pd-desc");
+  if(pdSel){
+    const pool=state.offense==="FELONY ASSAULT"?FILTERS.pd_desc.felony:
+      state.offense==="ASSAULT 3 & RELATED OFFENSES"?FILTERS.pd_desc.misd:
+      [...new Set([...FILTERS.pd_desc.felony,...FILTERS.pd_desc.misd])].sort();
+    pdSel.innerHTML=`<option value="all">All charge types</option>`+
+      pool.map(v=>`<option value="${v}"${state.pdDesc===v?" selected":""}>${v.charAt(0)+v.slice(1).toLowerCase()}</option>`).join("");
+  }
+  const chipDefs=[{key:"pdDesc",label:"Charge"},{key:"premGroup",label:"Venue"},
+    {key:"insideOut",label:"Location"},{key:"timeOfDay",label:"Time"},
+    {key:"suspAge",label:"Susp. age"},{key:"suspRace",label:"Susp. race"},{key:"suspSex",label:"Susp. sex"},
+    {key:"vicAge",label:"Vic. age"},{key:"vicRace",label:"Vic. race"},{key:"vicSex",label:"Vic. sex"}];
+  const chips=chipDefs.filter(d=>state[d.key]&&state[d.key]!=="all").map(d=>
+    `<span class="filter-chip" data-key="${d.key}">${d.label}: ${state[d.key]} <span class="chip-x">×</span></span>`);
+  document.getElementById("active-filters").innerHTML=chips.join("");
+  const ce=document.getElementById("filter-count");
+  if(ce)ce.textContent=chips.length>0?`(${chips.length} active)`:"";
+}
+
+// =============================================================================
+// RENDER
+// =============================================================================
+function render(){
+  renderMetrics();renderTrend();renderBoro();renderMap();
+  const bd=document.getElementById("sel-breakdown");
+  if(bd&&bd.value!=="none")renderBreakdown(bd.value);
+}
+
+function renderMetrics(){
+  const curYear=DATA.meta.current_year,prevYear=curYear-1;
+  const rows=filterYearly(getYearlyTable());
+  const curTotal=sumN(rows.filter(r=>r.year===curYear));
+  const prevTotal=sumN(rows.filter(r=>r.year===prevYear));
+  const delta=deltaDisplay(curTotal,prevTotal);
+  const byYear={};rows.forEach(r=>{byYear[r.year]=(byYear[r.year]||0)+r.n;});
+  const peak=Object.entries(byYear).sort((a,b)=>b[1]-a[1])[0];
+  const mRows=filterMonthly(state.dataSource==="arrests"?A_MONTHLY:C_MONTHLY);
+  const ytdM=getYTDMonth();
+  const curM=mRows.filter(r=>r.year===curYear&&r.month<=ytdM);
+  const months=[...new Set(curM.map(r=>r.month))].length||1;
+  document.getElementById("metrics-row").innerHTML=`
+    <div class="metric primary-metric">
+      <div class="m-label">${curYear} total (${DATA.meta.ytd_through})</div>
+      <div class="m-val">${fmt(curTotal)}</div>
+      <div class="m-delta ${delta.cls}">${delta.text}</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">${prevYear} comparison</div>
+      <div class="m-val">${fmt(prevTotal)}</div>
+      <div class="m-delta delta-flat">same period prior year</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Peak year${peak?" — "+peak[0]:""}</div>
+      <div class="m-val">${peak?fmt(peak[1]):"—"}</div>
+      <div class="m-delta delta-flat">highest on record</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Monthly avg — ${curYear}</div>
+      <div class="m-val">${fmt(Math.round(sumN(curM)/months))}</div>
+      <div class="m-delta delta-flat">per month</div>
+    </div>`;
+}
+
+function renderTrend(){
+  const vm=state.viewMode,src=state.dataSource==="arrests"?A_MONTHLY:C_MONTHLY;
+  const rows=filterMonthly(src);
+  const srcLabel=state.dataSource==="arrests"?"arrests":"complaints";
+  const curYear=String(DATA.meta.current_year),prevYear=String(DATA.meta.current_year-1);
+  const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  if(vm==="monthly"){
+    const s=buildMonthlySeries(rows);
+    const labels=s.map(p=>`${MO[p.month-1]} ${p.year}`);
+    const xOv=s.map(p=>p.month===1?String(p.year):"");
+    document.getElementById("trend-sub").textContent=`Monthly ${srcLabel} · 2006–${DATA.meta.current_year}`;
+    document.getElementById("trend-legend").innerHTML="";
+    drawLine("chart-trend",labels,s.map(p=>p.n),null,null,"tt-trend",xOv);
+  } else if(vm==="rolling12"){
+    const s=buildRollingSeries(buildMonthlySeries(rows)).filter(p=>p.n!==null);
+    const labels=s.map(p=>`${MO[p.month-1]} ${p.year}`);
+    const xOv=s.map(p=>p.month===1?String(p.year):"");
+    document.getElementById("trend-sub").textContent=`12-month rolling average · ${srcLabel}`;
+    document.getElementById("trend-legend").innerHTML="";
+    drawLine("chart-trend",labels,s.map(p=>p.n),null,null,"tt-trend",xOv);
+  } else if(vm==="ytd"){
+    const s=buildYearlySeries(rows,true);
+    document.getElementById("trend-sub").textContent=`YTD through ${DATA.meta.ytd_through} each year · ${srcLabel}`;
+    document.getElementById("trend-legend").innerHTML=`
+      <span><span class="leg-dot" style="background:${C_CMP}"></span>Prior years</span>
+      <span><span class="leg-dot" style="background:#394882"></span>${prevYear}</span>
+      <span><span class="leg-dot" style="background:${C_CUR}"></span>${curYear}</span>`;
+    drawLine("chart-trend",s.map(p=>String(p.year)),s.map(p=>p.n),curYear,prevYear,"tt-trend",null);
+  } else {
+    const s=buildYearlySeries(rows,false);
+    const inc=DATA.meta.current_quarter!=="Q4"?s.map(p=>String(p.year)===curYear):null;
+    document.getElementById("trend-sub").textContent=
+      `Annual ${srcLabel} · 2006–${DATA.meta.current_year}${DATA.meta.current_quarter!=="Q4"?" ("+curYear+" partial)":""}`;
+    document.getElementById("trend-legend").innerHTML=`
+      <span><span class="leg-dot" style="background:${C_CMP}"></span>Prior years</span>
+      <span><span class="leg-dot" style="background:#394882"></span>${prevYear}</span>
+      <span><span class="leg-dot" style="background:${C_CUR}"></span>${curYear}</span>`;
+    drawLine("chart-trend",s.map(p=>String(p.year)),s.map(p=>p.n),curYear,prevYear,"tt-trend",null,inc);
+  }
+}
+
+function renderBreakdown(dim){
+  if(dim==="none"){
+    document.getElementById("breakdown-sub").textContent="Select a dimension above to break down the trend.";
+    document.getElementById("breakdown-legend").innerHTML="";
+    const{ctx,W,H}=getCanvas("chart-breakdown",240);ctx.clearRect(0,0,W,H);return;
+  }
+  const isArr=state.dataSource==="arrests";
+  const cOnly=["prem_group","inside_outside","time_of_day","vic_age","vic_race","vic_sex"];
+  if(isArr&&cOnly.includes(dim)){
+    document.getElementById("breakdown-sub").textContent=`${dim.replace(/_/g," ")} not available for arrests.`;return;}
+  const vicDims=["vic_age","vic_race","vic_sex"];
+  let rows;
+  if(vicDims.includes(dim)&&!isArr)
+    rows=filterYearly(state.locDetail==="inside_outside"?C_IO_VIC:C_VIC);
+  else rows=filterYearly(getYearlyTable());
+  const fm={
+    ofns_desc:r=>r.ofns_desc,pd_desc:r=>r.pd_desc,loc_type:r=>r.loc_type,
+    borough:r=>r.borough,prem_group:r=>r.prem_group,inside_outside:r=>r.inside_outside,
+    time_of_day:r=>r.time_of_day,
+    susp_age:r=>isArr?r.age_group:r.susp_age,susp_race:r=>isArr?r.perp_race:r.susp_race,
+    susp_sex:r=>isArr?r.perp_sex:r.susp_sex,
+    vic_age:r=>r.vic_age,vic_race:r=>r.vic_race,vic_sex:r=>r.vic_sex
+  };
+  const dimFn=fm[dim];if(!dimFn)return;
+  const{allYears,groups}=buildYearlyBreakdown(rows,dimFn);
+  document.getElementById("breakdown-sub").textContent=`${dim.replace(/_/g," ")} · ${state.dataSource} · yearly`;
+  document.getElementById("breakdown-legend").innerHTML=
+    groups.map(g=>`<span><span class="leg-dot" style="background:${g.color}"></span>${g.label}</span>`).join("");
+  drawMultiLine("chart-breakdown",allYears.map(String),groups.map(g=>({label:g.label,color:g.color,data:g.data})),"tt-breakdown");
+}
+
+function renderBoro(){
+  const curYear=DATA.meta.current_year;
+  const rows=filterYearly(getYearlyTable()).filter(r=>r.year===curYear);
+  const bd=["Bronx","Brooklyn","Manhattan","Queens","Staten Island"].map(b=>({
+    name:b,val:sumN(rows.filter(r=>r.borough===b)),color:BORO_COLORS[b]
+  })).filter(b=>b.val>0).sort((a,b)=>b.val-a.val);
+  const total=bd.reduce((s,b)=>s+b.val,0),max=Math.max(...bd.map(b=>b.val),1);
+  document.getElementById("boro-sub").textContent=`${curYear} · ${state.dataSource}`;
+  document.getElementById("boro-legend").innerHTML=bd.map(b=>`<span><span class="leg-dot" style="background:${b.color}"></span>${b.name}</span>`).join("");
+  document.getElementById("boro-list").innerHTML=bd.map(b=>{
+    const pct=total>0?((b.val/total)*100).toFixed(1):"0.0",w=(b.val/max*100).toFixed(1);
+    return`<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+      <span style="font-weight:600;">${b.name}</span>
+      <span style="color:var(--text2);">${fmt(b.val)} <span style="opacity:0.7;">(${pct}%)</span></span>
+      </div><div class="boro-bar-bg"><div class="boro-bar-fill" style="width:${w}%;background:${b.color};"></div></div></div>`;
+  }).join("");
+}
+
+async function loadGeo(){
+  if(GEO)return GEO;
+  try{const r=await fetch("precincts.geojson");if(!r.ok)throw new Error("not found");GEO=await r.json();return GEO;}
+  catch(e){console.warn("Map unavailable:",e);return null;}
+}
+function getPctCount(pct,year){
+  try{
+    const src=state.dataSource==="arrests"?"arrests":"complaints";
+    const lt=state.locType==="all"?"Patrol":state.locType;
+    const of=state.offense==="All assaults"?"All assaults":state.offense;
+    const map=PCT_MAP[src]?.[of]?.[lt]?.[`pct_${pct}`]?.[String(year)];
+    if(!map)return 0;return Object.values(map).reduce((s,v)=>s+(v||0),0);
+  }catch{return 0;}
+}
+function renderMap(){
+  const curYear=DATA.meta.current_year,prevYear=curYear-1;
+  document.getElementById("map-sub").textContent=`${state.offense} · ${state.dataSource} · ${curYear} vs ${prevYear}`;
+  loadGeo().then(geo=>{
+    const loading=document.getElementById("map-loading");
+    if(!geo){if(loading)loading.textContent="Map data unavailable";return;}
+    if(loading)loading.style.display="none";
+    const canvas=document.getElementById("map-canvas"),container=document.getElementById("map-container");
+    const W=container.clientWidth,H=container.clientHeight;
+    canvas.width=W*devicePixelRatio;canvas.height=H*devicePixelRatio;
+    canvas.style.width="100%";canvas.style.height="100%";
+    const ctx=canvas.getContext("2d");ctx.scale(devicePixelRatio,devicePixelRatio);ctx.clearRect(0,0,W,H);
+    let mnLng=Infinity,mxLng=-Infinity,mnLat=Infinity,mxLat=-Infinity;
+    geo.features.forEach(f=>{
+      const polys=f.geometry.type==="MultiPolygon"?f.geometry.coordinates:[f.geometry.coordinates];
+      polys.forEach(p=>p.forEach(r=>r.forEach(([lng,lat])=>{
+        if(lng<mnLng)mnLng=lng;if(lng>mxLng)mxLng=lng;if(lat<mnLat)mnLat=lat;if(lat>mxLat)mxLat=lat;})));
+    });
+    const PAD=12,sc=Math.min((W-PAD*2)/(mxLng-mnLng),(H-PAD*2)/(mxLat-mnLat));
+    const mW=(mxLng-mnLng)*sc,mH=(mxLat-mnLat)*sc,oX=(W-mW)/2,oY=(H-mH)/2;
+    function proj([lng,lat]){return[oX+(lng-mnLng)*sc,oY+(mxLat-lat)*sc];}
+    const pctChanges={};
+    geo.features.forEach(f=>{
+      const pct=parseInt(f.properties.precinct||0);if(!pct)return;
+      const cur=getPctCount(pct,curYear),prv=getPctCount(pct,prevYear);
+      pctChanges[pct]={cur,prv,changePct:prv>0?((cur-prv)/prv)*100:cur>0?100:null};
+    });
+    const vals=Object.values(pctChanges).map(c=>c.changePct).filter(p=>p!=null);
+    const SMAX=Math.min(vals.length?Math.max(5,Math.ceil(Math.max(...vals.map(Math.abs))/5)*5):30,60);
+    function iColor(h1,h2,t){
+      const r1=parseInt(h1.slice(1,3),16),g1=parseInt(h1.slice(3,5),16),b1=parseInt(h1.slice(5,7),16);
+      const r2=parseInt(h2.slice(1,3),16),g2=parseInt(h2.slice(3,5),16),b2=parseInt(h2.slice(5,7),16);
+      return`rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;}
+    function ptColor(v){if(v===null)return"#e2e2e2";const c=Math.max(-SMAX,Math.min(SMAX,v));
+      return c<0?iColor("#efefef","#2d8a3e",Math.abs(c)/SMAX):c>0?iColor("#efefef","#c0392b",c/SMAX):"#efefef";}
+    const fps=[];
+    geo.features.forEach(f=>{
+      const pct=parseInt(f.properties.precinct||0);ctx.beginPath();
+      const polys=f.geometry.type==="MultiPolygon"?f.geometry.coordinates:[f.geometry.coordinates];
+      polys.forEach(p=>p.forEach(r=>{r.forEach(([lng,lat],i)=>{const[x,y]=proj([lng,lat]);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.closePath();}));
+      ctx.fillStyle=pctChanges[pct]?ptColor(pctChanges[pct].changePct):"#e8e6df";ctx.fill();
+      ctx.strokeStyle="rgba(255,255,255,0.9)";ctx.lineWidth=1.2;ctx.stroke();
+      fps.push({pct,change:pctChanges[pct],geometry:f.geometry});
+    });
+    const lgEl=document.getElementById("map-scale");
+    if(lgEl){const sw=Array.from({length:60},(_,i)=>ptColor(-SMAX+(i/60)*SMAX*2));
+      lgEl.innerHTML=`<span style="font-size:10px;font-weight:700;color:#2d8a3e;margin-right:4px;">−${SMAX}%</span>
+        <span style="display:inline-block;width:120px;height:12px;background:linear-gradient(to right,${sw.join(",")});border:1px solid rgba(0,0,0,0.12);vertical-align:middle;"></span>
+        <span style="font-size:10px;font-weight:700;color:#c0392b;margin-left:4px;">+${SMAX}%</span>`;}
+    function hitTest(mx,my){for(const{pct,change,geometry}of fps){ctx.beginPath();
+      const hp=geometry.type==="MultiPolygon"?geometry.coordinates:[geometry.coordinates];
+      hp.forEach(p=>p.forEach(r=>{r.forEach(([lng,lat],i)=>{const[x,y]=proj([lng,lat]);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.closePath();}));
+      if(ctx.isPointInPath(mx*devicePixelRatio,my*devicePixelRatio))return{pct,change};}return null;}
+    canvas.onmousemove=e=>{
+      const rect=canvas.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;
+      const hit=hitTest(mx,my),tt=document.getElementById("map-tooltip");
+      if(hit&&hit.change){const{pct,change}=hit;
+        const ps=change.changePct==null?"—":(change.changePct>0?"▲ +":"▼ ")+change.changePct.toFixed(1)+"%";
+        const col=change.changePct==null?"#707175":change.changePct>0?"#c0392b":"#2d8a3e";
+        tt.innerHTML=`<strong>${pctLabel(pct)}</strong><br><span style="color:${col};font-weight:700;">${ps} vs ${prevYear}</span><br>${curYear}: ${fmt(change.cur)} &nbsp;·&nbsp; ${prevYear}: ${fmt(change.prv)}`;
+        tt.classList.add("visible");
+        const ttW=tt.offsetWidth||200,ttH=tt.offsetHeight||80;
+        let l=mx+14,t=my-ttH/2;if(l+ttW>W-8)l=mx-ttW-14;if(t<4)t=4;if(t+ttH>H-4)t=H-ttH-4;
+        tt.style.left=l+"px";tt.style.top=t+"px";canvas.style.cursor="pointer";
+      }else{tt.classList.remove("visible");canvas.style.cursor="default";}};
+    canvas.onmouseleave=()=>document.getElementById("map-tooltip").classList.remove("visible");
+  });
+}
+
+// =============================================================================
+// CANVAS
+// =============================================================================
+function getCanvas(id,h){
+  const c=document.getElementById(id),W=c.parentElement.clientWidth||500,H=h||240;
+  c.width=W*devicePixelRatio;c.height=H*devicePixelRatio;c.style.width=W+"px";c.style.height=H+"px";
+  const ctx=c.getContext("2d");ctx.scale(devicePixelRatio,devicePixelRatio);return{ctx,W,H};}
+function showTT(id,canvas,mx,my,lines){
+  const tt=document.getElementById(id);if(!tt||!lines){if(tt)tt.classList.remove("visible");return;}
+  tt.innerHTML=lines.join("<br>");tt.classList.add("visible");
+  const cW=canvas.clientWidth,cH=canvas.clientHeight,ttW=tt.offsetWidth||160,ttH=tt.offsetHeight||60;
+  let l=mx+14,t=my-ttH/2;if(l+ttW>cW-8)l=mx-ttW-14;if(t<4)t=4;if(t+ttH>cH-4)t=cH-ttH-4;
+  tt.style.left=l+"px";tt.style.top=t+"px";}
+function hideTT(id){const tt=document.getElementById(id);if(tt)tt.classList.remove("visible");}
+
+function drawLine(id,labels,data,curYear,cmpYear,ttId,xOv,incomplete){
+  const{ctx,W,H}=getCanvas(id,240);
+  const PL=48,PR=24,PT=12,PB=28,cW=W-PL-PR,cH=H-PT-PB;
+  const vd=data.filter(v=>v!=null&&v>0),mx=Math.max(...(vd.length?vd:[1])),mn=Math.min(...(vd.length?vd:[0]));
+  const range=mx-mn,padT=range>0?range*0.25:mx*0.15,padB=range>0?range*0.15:0;
+  const mag=Math.pow(10,Math.floor(Math.log10((mx+padT-Math.max(0,mn-padB))||1)));
+  const nMin=Math.floor(Math.max(0,mn-padB)/mag)*mag,nMax=Math.ceil((mx+padT)/mag)*mag||1;
+  const TICKS=4,n=labels.length,step=cW/Math.max(n-1,1);
+  const px=i=>PL+i*step,py=v=>PT+cH-((v-nMin)/(nMax-nMin))*cH;
+  function paint(hov){
+    ctx.clearRect(0,0,W,H);
+    for(let i=0;i<=TICKS;i++){const v=nMin+(nMax-nMin)/TICKS*i,y=py(v);
+      ctx.strokeStyle=C_GRID;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(PL+cW,y);ctx.stroke();
+      ctx.fillStyle=C_LABEL;ctx.font="10px -apple-system,sans-serif";ctx.textAlign="right";
+      ctx.fillText(v<100?v.toFixed(0):fmtK(Math.round(v)),PL-5,y+3.5);}
+    if(hov>=0){ctx.strokeStyle="rgba(5,5,7,0.12)";ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(px(hov),PT);ctx.lineTo(px(hov),PT+cH);ctx.stroke();ctx.setLineDash([]);}
+    ctx.beginPath();ctx.strokeStyle=C_TREND;ctx.lineWidth=2.5;let st=false;
+    data.forEach((v,i)=>{if(v==null||v===0||incomplete&&incomplete[i]){if(st){ctx.stroke();st=false;}return;}
+      if(!st){ctx.moveTo(px(i),py(v));st=true;}else ctx.lineTo(px(i),py(v));});if(st)ctx.stroke();
+    if(incomplete&&incomplete.some(Boolean)){
+      ctx.beginPath();ctx.strokeStyle=C_TREND;ctx.lineWidth=2;ctx.setLineDash([4,4]);
+      const lc=data.reduce((l,_,i)=>(!incomplete||!incomplete[i])?i:l,-1);
+      if(lc>=0){ctx.moveTo(px(lc),py(data[lc]));data.forEach((v,i)=>{if(incomplete&&incomplete[i])ctx.lineTo(px(i),py(v));});}
+      ctx.stroke();ctx.setLineDash([]);}
+    data.forEach((v,i)=>{if(!v)return;
+      const lbl=labels[i],isCur=lbl===String(curYear),isCmp=lbl===String(cmpYear),isHov=i===hov;
+      const r=isHov?6:(isCur||isCmp)?5:2.5;
+      const col=isHov?"#050507":isCur?C_CUR:isCmp?"#394882":"rgba(5,5,7,0.25)";
+      ctx.beginPath();ctx.arc(px(i),py(v),r,0,Math.PI*2);
+      if(incomplete&&incomplete[i]){ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.stroke();}
+      else{ctx.fillStyle=col;ctx.fill();}
+      if((isCur||isCmp)&&!isHov&&!xOv){ctx.fillStyle=col;ctx.font="bold 10px -apple-system,sans-serif";
+        ctx.textAlign="center";ctx.fillText(lbl,px(i),py(v)-10);}});
+    ctx.fillStyle=C_LABEL;ctx.font="10px -apple-system,sans-serif";
+    if(xOv){ctx.textAlign="center";let lx=-999;
+      xOv.forEach((lbl,i)=>{if(!lbl)return;const x=px(i),w=ctx.measureText(lbl).width;
+        if(x-lx<28||x+w/2>W-6)return;ctx.fillText(lbl,x,H-6);lx=x;});
+    }else{const ev=Math.max(1,Math.ceil(n/8));
+      labels.forEach((lbl,i)=>{if(i%ev!==0)return;ctx.textAlign="center";ctx.fillText(lbl,px(i),H-6);});
+      const li=n-1,lx2=px(li),ll=labels[li],lw=ctx.measureText(ll).width;
+      if(lx2+lw/2<=W-4){const pi=Math.floor(li/ev)*ev;
+        if(li-pi>ev*0.4){ctx.textAlign="center";ctx.fillText(ll,lx2,H-6);}}}
+    ctx.strokeStyle=C_AXIS;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PL,PT+cH);ctx.lineTo(PL+cW,PT+cH);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL,PT+cH);ctx.stroke();}
+  paint(-1);
+  const cv=document.getElementById(id);
+  cv.onmousemove=e=>{const rect=cv.getBoundingClientRect(),mx=e.clientX-rect.left;
+    const i=Math.round((mx-PL)/step);
+    if(i>=0&&i<n&&data[i]){paint(i);const lbl=labels[i];
+      const col=lbl===String(curYear)?C_CUR:lbl===String(cmpYear)?"#394882":"#050507";
+      showTT(ttId,cv,mx,e.clientY-rect.top,[`<strong style="color:${col}">${lbl}</strong>`,
+        `${Math.round(data[i]).toLocaleString()} ${state.dataSource}`]);
+    }else{paint(-1);hideTT(ttId);}};
+  cv.onmouseleave=()=>{paint(-1);hideTT(ttId);};}
+
+function drawMultiLine(id,labels,datasets,ttId,xOv){
+  const{ctx,W,H}=getCanvas(id,240);
+  const PL=48,PR=24,PT=12,PB=28,cW=W-PL-PR,cH=H-PT-PB;
+  const allV=datasets.flatMap(d=>d.data).filter(v=>v>0),mx=Math.max(...(allV.length?allV:[1]));
+  const mag=Math.pow(10,Math.floor(Math.log10(mx*1.2||1))),nMax=Math.ceil(mx*1.2/mag)*mag||1,nMin=0;
+  const TICKS=4,n=labels.length,step=cW/Math.max(n-1,1);
+  const px=i=>PL+i*step,py=v=>PT+cH-((v-nMin)/(nMax-nMin))*cH;
+  function paint(hov){
+    ctx.clearRect(0,0,W,H);
+    for(let i=0;i<=TICKS;i++){const v=nMin+(nMax-nMin)/TICKS*i,y=py(v);
+      ctx.strokeStyle=C_GRID;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(PL+cW,y);ctx.stroke();
+      ctx.fillStyle=C_LABEL;ctx.font="10px -apple-system,sans-serif";ctx.textAlign="right";
+      ctx.fillText(v<100?v.toFixed(0):fmtK(Math.round(v)),PL-5,y+3.5);}
+    if(hov>=0){ctx.strokeStyle="rgba(5,5,7,0.08)";ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(px(hov),PT);ctx.lineTo(px(hov),PT+cH);ctx.stroke();ctx.setLineDash([]);}
+    datasets.forEach(d=>{ctx.beginPath();ctx.strokeStyle=d.color;ctx.lineWidth=2;let st=false;
+      d.data.forEach((v,i)=>{if(!v){if(st){ctx.stroke();st=false;}return;}
+        if(!st){ctx.moveTo(px(i),py(v));st=true;}else ctx.lineTo(px(i),py(v));});if(st)ctx.stroke();
+      if(hov>=0&&d.data[hov]){ctx.beginPath();ctx.arc(px(hov),py(d.data[hov]),4,0,Math.PI*2);
+        ctx.fillStyle=d.color;ctx.fill();}});
+    ctx.fillStyle=C_LABEL;ctx.font="10px -apple-system,sans-serif";
+    if(xOv){ctx.textAlign="center";let lx=-999;
+      xOv.forEach((lbl,i)=>{if(!lbl)return;const x=px(i),w=ctx.measureText(lbl).width;
+        if(x-lx<28||x+w/2>W-6)return;ctx.fillText(lbl,x,H-6);lx=x;});
+    }else{const ev=Math.max(1,Math.ceil(n/8));
+      labels.forEach((lbl,i)=>{if(i%ev!==0)return;ctx.textAlign="center";ctx.fillText(lbl,px(i),H-6);});}
+    ctx.strokeStyle=C_AXIS;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PL,PT+cH);ctx.lineTo(PL+cW,PT+cH);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL,PT+cH);ctx.stroke();}
+  paint(-1);
+  const cv=document.getElementById(id);
+  cv.onmousemove=e=>{const rect=cv.getBoundingClientRect(),mx=e.clientX-rect.left;
+    const i=Math.round((mx-PL)/step);
+    if(i>=0&&i<n){paint(i);
+      showTT(ttId,cv,mx,e.clientY-rect.top,[`<strong>${labels[i]}</strong>`,
+        ...datasets.filter(d=>d.data[i]).map(d=>
+          `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color};margin-right:4px;"></span>${d.label}: ${Math.round(d.data[i]).toLocaleString()}`)]);
+    }else{paint(-1);hideTT(ttId);}};
+  cv.onmouseleave=()=>{paint(-1);hideTT(ttId);};}
+
+// =============================================================================
+// BOOT
+// =============================================================================
+async function boot(){
+  let raw;
+  try{const resp=await fetch("assault_data.json");
+    if(!resp.ok)throw new Error(`HTTP ${resp.status}`);raw=await resp.json();
+  }catch(err){
+    document.getElementById("app").innerHTML=`<div class="state-screen">
+      <h2>Data file not found</h2>
+      <p>Place <code>assault_data.json</code> in the same folder as this file, then reload.<br><br>
+      Generate it with: <code>source("fetch_assault_data.R")</code></p></div>`;return;}
+  DATA=raw; FILTERS=raw.filters;
+  // Convert all columnar tables to row arrays on load (~1-2 seconds)
+  // After this, all filtering works with normal row objects
+  C_MONTHLY=fromColumnar(raw.monthly_simple);
+  A_MONTHLY=fromColumnar(raw.arrests_monthly_simple);
+  C_SUSP   =fromColumnar(raw.complaints_susp);
+  C_VIC    =fromColumnar(raw.complaints_vic);
+  C_IO_SUSP=fromColumnar(raw.complaints_io_susp);
+  C_IO_VIC =fromColumnar(raw.complaints_io_vic);
+  A_YR     =fromColumnar(raw.arrests);
+  PCT_MAP  =raw.precinct_map;
+  buildApp();
+}
+boot();
+</script>
+
+
+</body></html>
