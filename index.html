@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0057)file:///C:/Users/paulr/Downloads/assault_dashboard_3.html -->
+<!-- saved from url=(0057)file:///C:/Users/paulr/Downloads/assault_dashboard_4.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -313,12 +313,65 @@ const state={
 // =============================================================================
 // COLORS
 // =============================================================================
-const PALETTE=["#394882","#ff7c53","#217ebe","#e7466d","#2d8a3e","#9b9fbc","#b8a000","#c8c8c8",
+const PALETTE=["#394882","#ff7c53","#217ebe","#e7466d","#2d8a3e","#9b9fbc","#b8a000","#555555",
                "#6b3fa0","#d4622a","#0f5f8a","#a01830"];
 const BORO_COLORS={"Bronx":"#ff7c53","Brooklyn":"#217ebe","Manhattan":"#e7466d",
   "Queens":"#b8c400","Staten Island":"#9b9fbc"};
 const C_SINGLE="#394882";
 const C_GRID="rgba(5,5,7,0.06)",C_AXIS="rgba(5,5,7,0.15)",C_LABEL="#707175";
+
+// Stable color cache — every category value gets a permanent color
+// assigned once and never changes regardless of sort order or visibility
+const COLOR_CACHE={};
+let COLOR_IDX=0;
+function stableColor(label){
+  if(COLOR_CACHE[label]===undefined)
+    COLOR_CACHE[label]=PALETTE[(COLOR_IDX++)%PALETTE.length];
+  return COLOR_CACHE[label];
+}
+
+// Canonical sort orders for known dimensions
+const SORT_ORDERS={
+  age:      ["<18","18-24","25-44","45-64","65+","Unknown"],
+  ofns_desc:["FELONY ASSAULT","ASSAULT 3 & RELATED OFFENSES"],
+  loc_type: ["Patrol","Subway","Housing"],
+  inside_outside:["Inside","Outside","Unknown"],
+  time_of_day:["Late night (12am-6am)","Morning (6am-12pm)",
+    "Afternoon (12pm-6pm)","Evening / night (6pm-12am)","Unknown"],
+  sex:    ["M","F","Unknown"],
+  borough:["Bronx","Brooklyn","Manhattan","Queens","Staten Island","Unknown"],
+};
+
+function getSortOrder(breakBy){
+  if(breakBy==="susp_age"||breakBy==="vic_age")return SORT_ORDERS.age;
+  if(breakBy==="ofns_desc")return SORT_ORDERS.ofns_desc;
+  if(breakBy==="loc_type")return SORT_ORDERS.loc_type;
+  if(breakBy==="inside_outside")return SORT_ORDERS.inside_outside;
+  if(breakBy==="time_of_day")return SORT_ORDERS.time_of_day;
+  if(breakBy==="susp_sex"||breakBy==="vic_sex")return SORT_ORDERS.sex;
+  if(breakBy==="borough")return SORT_ORDERS.borough;
+  return null;
+}
+
+// Pre-assign stable colors to all known values upfront
+// so colors are consistent from the very first render
+function initColors(f){
+  SORT_ORDERS.age.forEach(v=>stableColor(v));
+  SORT_ORDERS.ofns_desc.forEach(v=>stableColor(v));
+  SORT_ORDERS.loc_type.forEach(v=>stableColor(v));
+  SORT_ORDERS.inside_outside.forEach(v=>stableColor(v));
+  SORT_ORDERS.time_of_day.forEach(v=>stableColor(v));
+  SORT_ORDERS.sex.forEach(v=>stableColor(v));
+  SORT_ORDERS.borough.forEach(v=>stableColor(v));
+  if(f.susp_races)f.susp_races.forEach(v=>stableColor(v));
+  if(f.vic_races) f.vic_races.forEach(v=>stableColor(v));
+  if(f.perp_races)f.perp_races.forEach(v=>stableColor(v));
+  if(f.prem_groups)f.prem_groups.forEach(v=>stableColor(v));
+  if(f.pd_desc){
+    if(f.pd_desc.felony)f.pd_desc.felony.forEach(v=>stableColor(v));
+    if(f.pd_desc.misd)  f.pd_desc.misd.forEach(v=>stableColor(v));
+  }
+}
 
 // =============================================================================
 // PRECINCT DATA
@@ -491,13 +544,33 @@ function buildBreakdownSeries(rows,dimFn){
     allKeys=[...new Set(Object.values(groups).flatMap(g=>Object.keys(g)))].sort();
   }
 
-  // Build series per group, sort by total descending, cap at 12
-  const series=Object.entries(groups).map(([label,byKey],idx)=>({
-    label,
-    color:PALETTE[idx%PALETTE.length],
-    total:Object.values(byKey).reduce((s,v)=>s+v,0),
-    data:allKeys.map(k=>byKey[k]||0)
-  })).sort((a,b)=>b.total-a.total).slice(0,12);
+  // Build series per group using stable colors and canonical sort order
+  const order=getSortOrder(state.breakBy);
+  let series;
+  if(order){
+    // Use canonical order, include all known values even if count is 0
+    series=order
+      .filter(label=>groups[label]!==undefined)
+      .map(label=>({
+        label,
+        color:stableColor(label),
+        total:Object.values(groups[label]).reduce((s,v)=>s+v,0),
+        data:allKeys.map(k=>groups[label][k]||0)
+      }));
+    // Append any values not in the canonical order (safety net)
+    Object.keys(groups).filter(l=>!order.includes(l)).forEach(label=>{
+      series.push({label,color:stableColor(label),
+        total:Object.values(groups[label]).reduce((s,v)=>s+v,0),
+        data:allKeys.map(k=>groups[label][k]||0)});
+    });
+  }else{
+    // No canonical order — sort by total volume descending, cap at 12
+    series=Object.entries(groups).map(([label,byKey])=>({
+      label,color:stableColor(label),
+      total:Object.values(byKey).reduce((s,v)=>s+v,0),
+      data:allKeys.map(k=>byKey[k]||0)
+    })).sort((a,b)=>b.total-a.total).slice(0,12);
+  }
 
   // Apply rolling average if needed
   if(vm==="rolling12"){
@@ -906,7 +979,37 @@ function updateSidebarState(){
       pool.map(v=>`<option value="${v}"${v===curVal?" selected":""}>${v.charAt(0)+v.slice(1).toLowerCase()}</option>`).join("");
   }
 
-  // Active tags
+  // Grey out the "Break down by" dropdown options that aren't available
+  // given the current data source and active filters
+  const breakSel=document.getElementById("sel-break");
+  if(breakSel){
+    Array.from(breakSel.options).forEach(opt=>{
+      const v=opt.value;
+      let unavail=false;
+      // Complaints-only dimensions unavailable for arrests
+      if(isArr&&["prem_group","inside_outside","time_of_day",
+        "vic_age","vic_race","vic_sex"].includes(v)) unavail=true;
+      // If already filtering by this dimension, can't also break by it
+      if(v==="borough"&&state.borough!=="all") unavail=true;
+      if(v==="loc_type"&&state.locType!=="all") unavail=true;
+      if(v==="pd_desc"&&state.pdDesc!=="all") unavail=true;
+      if(v==="prem_group"&&state.premGroup!=="all") unavail=true;
+      if(v==="inside_outside"&&state.insideOut!=="all") unavail=true;
+      if(v==="time_of_day"&&state.timeOfDay!=="all") unavail=true;
+      if(v==="susp_age"&&state.suspAge!=="all") unavail=true;
+      if(v==="susp_race"&&state.suspRace!=="all") unavail=true;
+      if(v==="susp_sex"&&state.suspSex!=="all") unavail=true;
+      if(v==="vic_age"&&state.vicAge!=="all") unavail=true;
+      if(v==="vic_race"&&state.vicRace!=="all") unavail=true;
+      if(v==="vic_sex"&&state.vicSex!=="all") unavail=true;
+      opt.disabled=unavail;
+      opt.style.color=unavail?"#bbb":"";
+    });
+    // If currently selected breakBy becomes unavailable, reset it
+    const selOpt=breakSel.options[breakSel.selectedIndex];
+    if(selOpt&&selOpt.disabled){
+      state.breakBy="none";breakSel.value="none";}
+  }
   const tagDefs=[
     {k:"borough",l:"Borough"},{k:"pdDesc",l:"Charge"},{k:"premGroup",l:"Venue"},
     {k:"insideOut",l:"Location"},{k:"timeOfDay",l:"Time"},
@@ -1363,6 +1466,8 @@ async function boot(){
   C_IO_VIC=fromColumnar(raw.complaints_io_vic);
   A_YR=fromColumnar(raw.arrests);
   PCT_MAP=raw.precinct_map;
+  // Pre-assign stable colors to all known category values
+  initColors(raw.filters);
   buildApp();
 }
 boot();
