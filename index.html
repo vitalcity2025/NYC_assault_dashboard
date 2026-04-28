@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0057)file:///C:/Users/paulr/Downloads/assault_dashboard_2.html -->
+<!-- saved from url=(0057)file:///C:/Users/paulr/Downloads/assault_dashboard_3.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -938,20 +938,25 @@ function render(){
 
 // =============================================================================
 // METRICS
+// All four metrics use filterRows(getYearlyTable()) so they always reflect
+// all active filters including charge type, venue, and demographics.
 // =============================================================================
 function renderMetrics(){
-  const curYear=DATA.meta.current_year,prevYear=curYear-1;
-  const ytdM=getYTDMonth();
+  const curYear=DATA.meta.current_year,prevYear=curYear-1,prevYear2=curYear-2;
   const rows=filterRows(getYearlyTable());
   const curTotal=sumN(rows.filter(r=>r.year===curYear));
   const prevTotal=sumN(rows.filter(r=>r.year===prevYear));
+  const prev2Total=sumN(rows.filter(r=>r.year===prevYear2));
   const delta=deltaDisplay(curTotal,prevTotal);
+  const delta2=deltaDisplay(curTotal,prev2Total);
   const byYear={};rows.forEach(r=>{byYear[r.year]=(byYear[r.year]||0)+r.n;});
-  const peak=Object.entries(byYear).sort((a,b)=>b[1]-a[1])[0];
-  // Monthly avg from simple table
-  const mRows=filterMonthly(state.dataSource==="arrests"?A_MONTHLY:C_MONTHLY);
-  const curM=mRows.filter(r=>r.year===curYear&&r.month<=ytdM);
-  const months=[...new Set(curM.map(r=>r.month))].length||1;
+  const allYearsSorted=Object.entries(byYear).sort((a,b)=>b[1]-a[1]);
+  const peak=allYearsSorted[0];
+  // % change from peak
+  const peakVal=peak?peak[1]:0;
+  const pctFromPeak=peakVal>0?((curTotal-peakVal)/peakVal*100).toFixed(1):null;
+  const pctFromPeakStr=pctFromPeak!=null?(pctFromPeak>0?"+":"")+pctFromPeak+"%":"—";
+  const pctCls=pctFromPeak!=null?(pctFromPeak>0?"delta-up":pctFromPeak<0?"delta-down":"delta-flat"):"delta-flat";
   document.getElementById("metrics-bar").innerHTML=`
     <div class="metric primary">
       <div class="m-label">${curYear} total</div>
@@ -964,14 +969,14 @@ function renderMetrics(){
       <div class="m-delta delta-flat">prior year</div>
     </div>
     <div class="metric">
-      <div class="m-label">Peak year${peak?" — "+peak[0]:""}</div>
-      <div class="m-val">${peak?fmt(peak[1]):"—"}</div>
-      <div class="m-delta delta-flat">highest on record</div>
+      <div class="m-label">${prevYear2} total</div>
+      <div class="m-val">${fmt(prev2Total)}</div>
+      <div class="m-delta ${delta2.cls}">${delta2.text}</div>
     </div>
     <div class="metric">
-      <div class="m-label">Monthly avg ${curYear}</div>
-      <div class="m-val">${fmt(Math.round(sumN(curM)/months))}</div>
-      <div class="m-delta delta-flat">per month</div>
+      <div class="m-label">Peak year${peak?" — "+peak[0]:""}</div>
+      <div class="m-val">${peak?fmt(peak[1]):"—"}</div>
+      <div class="m-delta ${pctCls}">${pctFromPeakStr} vs peak</div>
     </div>`;
 }
 
@@ -998,34 +1003,44 @@ function renderMainChart(){
   const legendEl=document.getElementById("chart-legend");
 
   if(breakBy==="none"){
-    // Single line from monthly simple table
-    const src=state.dataSource==="arrests"?A_MONTHLY:C_MONTHLY;
-    const rows=filterMonthly(src);
+    // For yearly/YTD: use the full yearly table so all filters apply.
+    // For monthly/rolling12: use the monthly simple table (only offense/loc/borough
+    // filters apply — a note is shown in the subtitle).
     titleEl.textContent="Total assaults over time";
-
     let labels,data,xOv=null,incomplete=null;
-    if(vm==="monthly"){
-      const s=buildMonthlySeries(rows);
-      labels=s.map(p=>`${MO[p.month-1]} ${p.year}`);
-      data=s.map(p=>p.n);
-      xOv=s.map(p=>p.month===1?String(p.year):"");
-      subEl.textContent=`Monthly ${srcLabel}`;
-    }else if(vm==="rolling12"){
-      const s=buildRollingSeries(buildMonthlySeries(rows)).filter(p=>p.n!==null);
-      labels=s.map(p=>`${MO[p.month-1]} ${p.year}`);
-      data=s.map(p=>p.n);
-      xOv=s.map(p=>p.month===1?String(p.year):"");
-      subEl.textContent=`12-month rolling average · ${srcLabel}`;
-    }else if(vm==="ytd"){
-      const s=buildYearlySeries(rows,true);
-      labels=s.map(p=>String(p.year));data=s.map(p=>p.n);
-      subEl.textContent=`YTD through ${DATA.meta.ytd_through} · ${srcLabel}`;
+
+    if(vm==="monthly"||vm==="rolling12"){
+      // Monthly table — demographic/venue filters not available at monthly granularity
+      const hasDetailFilter=state.pdDesc!=="all"||state.premGroup!=="all"||
+        state.timeOfDay!=="all"||state.suspAge!=="all"||state.suspRace!=="all"||
+        state.suspSex!=="all"||state.vicAge!=="all"||state.vicRace!=="all"||state.vicSex!=="all";
+      const mSrc=state.dataSource==="arrests"?A_MONTHLY:C_MONTHLY;
+      const rows=filterMonthly(mSrc);
+      if(vm==="monthly"){
+        const s=buildMonthlySeries(rows);
+        labels=s.map(p=>`${MO[p.month-1]} ${p.year}`);
+        data=s.map(p=>p.n);xOv=s.map(p=>p.month===1?String(p.year):"");
+        subEl.textContent=`Monthly ${srcLabel}${hasDetailFilter?" · charge/venue/demographic filters not applied to monthly view":""}`;
+      }else{
+        const s=buildRollingSeries(buildMonthlySeries(rows)).filter(p=>p.n!==null);
+        labels=s.map(p=>`${MO[p.month-1]} ${p.year}`);
+        data=s.map(p=>p.n);xOv=s.map(p=>p.month===1?String(p.year):"");
+        subEl.textContent=`12-month rolling average · ${srcLabel}${hasDetailFilter?" · charge/venue/demographic filters not applied":""}`;
+      }
     }else{
-      const s=buildYearlySeries(rows,false);
-      labels=s.map(p=>String(p.year));data=s.map(p=>p.n);
-      if(DATA.meta.current_quarter!=="Q4")
-        incomplete=labels.map(l=>l===String(curYear));
-      subEl.textContent=`Annual ${srcLabel}`;
+      // Yearly / YTD — use full filter table so ALL filters apply
+      const rows=filterRows(getYearlyTable());
+      if(vm==="ytd"){
+        const s=buildYearlySeries(rows,true);
+        labels=s.map(p=>String(p.year));data=s.map(p=>p.n);
+        subEl.textContent=`YTD through ${DATA.meta.ytd_through} · ${srcLabel}`;
+      }else{
+        const s=buildYearlySeries(rows,false);
+        labels=s.map(p=>String(p.year));data=s.map(p=>p.n);
+        if(DATA.meta.current_quarter!=="Q4")
+          incomplete=labels.map(l=>l===String(curYear));
+        subEl.textContent=`Annual ${srcLabel}`;
+      }
     }
     legendEl.innerHTML=`<span><span class="leg-dot" style="background:${C_SINGLE}"></span>All assaults</span>`;
     drawSingleLine("main-chart",labels,data,xOv,incomplete,"tt-main",srcLabel);
